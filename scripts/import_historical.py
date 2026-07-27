@@ -43,6 +43,30 @@ def flag(value):
     return str(value).strip().lower() in ("sí", "si", "yes", "true", "1")
 
 
+SPANISH_MONTHS = {
+    "ene": 1, "enero": 1, "feb": 2, "febrero": 2, "mar": 3, "marzo": 3,
+    "abr": 4, "abril": 4, "may": 5, "mayo": 5, "jun": 6, "junio": 6,
+    "jul": 7, "julio": 7, "ago": 8, "agosto": 8, "sep": 9, "sept": 9,
+    "septiembre": 9, "oct": 10, "octubre": 10, "nov": 11, "noviembre": 11,
+    "dic": 12, "diciembre": 12,
+}
+
+
+def spanish_date(value):
+    """Convierte fechas de Mercado Libre como 'Martes 14 jul 2026 - 21:29 hs'."""
+    text = clean(value)
+    if not text:
+        return None
+    match = re.search(r"\\b(\\d{1,2})\\s+(?:de\\s+)?([a-záéíóúñ]+)\\s+(?:de\\s+)?(\\d{4})\\b", text.lower())
+    if not match:
+        return None
+    day, month_name, year = match.groups()
+    month = SPANISH_MONTHS.get(month_name)
+    if not month:
+        return None
+    return f"{year}-{month:02d}-{int(day):02d}"
+
+
 def frame(path, **kwargs):
     return pd.read_excel(path, **kwargs)
 
@@ -170,7 +194,7 @@ def claim_rows(root):
         return []
     df = pd.read_csv(path)
     return [{"external_claim_id": clean(r.get("Número de reclamo")), "external_order_id": clean(r.get("# de la venta")),
-             "claim_date": clean(r.get("Fecha del reclamo")), "claim_type": clean(r.get("Tipo de reclamo")),
+             "claim_date": spanish_date(r.get("Fecha del reclamo")), "claim_type": clean(r.get("Tipo de reclamo")),
              "claim_detail": clean(r.get("Detalle del reclamo"))} for _, r in df.iterrows() if clean(r.get("Número de reclamo"))]
 
 
@@ -182,7 +206,9 @@ def env_value(name):
     if env.exists():
         for line in env.read_text().splitlines():
             if line.startswith(name + "="):
-                return line.split("=", 1)[1].strip().strip("\"'")
+                candidate = line.split("=", 1)[1].strip().strip("\"'")
+                if candidate:
+                    return candidate
     return None
 
 
@@ -197,8 +223,9 @@ def request(url, key, table, rows, conflict=None):
         http_json("POST", endpoint, headers, rows[start:start + 250])
 
 
-def http_json(method, url, headers, payload):
-    request = Request(url, data=json.dumps(payload).encode("utf-8"), headers=headers, method=method)
+def http_json(method, url, headers, payload=None):
+    data = json.dumps(payload).encode("utf-8") if payload is not None else None
+    request = Request(url, data=data, headers=headers, method=method)
     try:
         with urlopen(request, timeout=60) as response:
             body = response.read().decode("utf-8")
@@ -216,6 +243,25 @@ def api_headers(key, prefer=None):
     if prefer:
         headers["Prefer"] = prefer
     return headers
+
+
+def source_import_id(url, key, checksum, import_row):
+    """Reanuda una importación parcial del mismo ZIP en lugar de duplicarla."""
+    endpoint = f"{url.rstrip('/')}/rest/v1/source_imports?source_file_sha256=eq.{checksum}&order=imported_at.desc&limit=1"
+    existing = http_json("GET", endpoint, api_headers(key))
+    if existing:
+        import_id = existing[0]["id"]
+        http_json("PATCH", f"{url.rstrip('/')}/rest/v1/source_imports?id=eq.{import_id}", api_headers(key), {"import_status": "validated"})
+        return import_id, True
+    created = http_json("POST", f"{url.rstrip('/')}/rest/v1/source_imports", api_headers(key, "return=representation"), import_row)
+    return created[0]["id"], False
+
+
+def clear_partial_import(url, key, import_id):
+    """Elimina solo las filas creadas por una ejecución parcial del mismo ZIP."""
+    for table in ("claims", "ad_listing_metrics", "ad_campaign_metrics", "settlement_transactions", "sales_orders"):
+        endpoint = f"{url.rstrip('/')}/rest/v1/{table}?source_import_id=eq.{import_id}"
+        http_json("DELETE", endpoint, api_headers(key, "return=minimal"))
 
 
 def main():
@@ -247,9 +293,10 @@ def main():
             sys.exit("Faltan SUPABASE_URL y SUPABASE_SECRET_KEY (o la clave legacy SUPABASE_SERVICE_ROLE_KEY) en .env. Nunca las compartas por chat ni las subas a GitHub.")
         checksum = hashlib.sha256(zip_path.read_bytes()).hexdigest()
         import_row = {"source_file_name": zip_path.name, "source_file_sha256": checksum, "report_type": "historical_marketplace_zip", "captured_at": datetime.now(timezone.utc).isoformat(), "row_count": sum(summary[n] for n in payloads), "import_status": "validated"}
-        endpoint = f"{url.rstrip('/')}/rest/v1/source_imports"
-        headers = api_headers(key, "return=representation")
-        import_id = http_json("POST", endpoint, headers, import_row)[0]["id"]
+        import_id, resumed = source_import_id(url, key, checksum, import_row)
+        if resumed:
+            print("Se detectó una importación parcial anterior; se reanudará sin duplicar métricas.")
+        clear_partial_import(url, key, import_id)
         # marketplace_listings es el catálogo actual y no guarda una referencia
         # directa al archivo; las tablas de hechos sí conservan su trazabilidad.
         for table, rows in payloads.items():
