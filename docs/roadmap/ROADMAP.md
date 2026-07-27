@@ -2,49 +2,30 @@
 
 ## v0.1.0 — Foundation ✅
 
-- Estructura del workspace.
-- Dominio del negocio, reglas y ciclo de vida.
-- Arquitectura conceptual.
-- Convenciones de seguridad y versionado.
+- Workspace, dominio, ciclo de vida y arquitectura conceptual.
 
-## v0.2.0 — Modelo de datos
+## v0.2.0 — Modelo de datos inicial ✅
 
-- Inventario y diccionario de los reportes reales de Mercado Libre.
-- Modelo entidad-relación de Lumina.
+- Inventario de 16 reportes reales de Mercado Libre.
+- Diccionario, reglas de importación y deduplicación.
 - Esquema SQL inicial para Supabase.
-- Definición de fuentes, claves y trazabilidad histórica.
 
 ## v0.3.0 — Importación histórica
 
-- Proceso reproducible para importar los dos meses de datos disponibles.
-- Validación de calidad de datos.
-- Primeras tablas de ventas, publicaciones, liquidaciones y publicidad.
+- Configurar Supabase.
+- Validar y ejecutar el esquema `001_lumina_core.sql`.
+- Importar ventas, publicaciones, stock, liquidaciones y publicidad sin duplicados.
+- Generar controles de calidad y conciliación.
 
-## v0.4.0 — Conector Mercado Libre
+## v0.4.0 — Insight inicial
 
-- OAuth seguro.
-- Sincronización manual controlada de publicaciones, ventas y métricas disponibles.
-- Registro de ejecuciones y errores.
+- KPIs de ventas, margen de plataforma, conversión, publicidad y stock.
+- Primer dashboard y reporte semanal.
 
-## v0.5.0 — Insight inicial
+## v0.5.0 — Conector Mercado Libre
 
-- KPIs de ventas, conversión, margen, publicidad y stock.
-- Alertas básicas y lista de oportunidades.
-- Dashboard inicial y reporte semanal.
-
-## v0.6.0 — Automatización
-
-- Workflows n8n programados.
-- Actualización histórica segura.
-- Generación de bitácora y reportes en PDF.
+- OAuth seguro, sincronización controlada y registro de ejecuciones.
 
 ## v1.0.0 — Lumina OS operativo
 
-- Flujo confiable desde Mercado Libre a decisiones priorizadas.
-- Base histórica protegida.
-- Dashboard, informe semanal y bitácora de decisiones.
-- Aprendizajes vinculados a activos y experimentos.
-
-## Criterio de avance
-
-No se automatiza un proceso hasta que se haya entendido, documentado y probado de forma manual.
+- Datos actualizados, decisiones priorizadas, bitácora y aprendizaje por activo.

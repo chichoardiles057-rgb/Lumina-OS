@@ -1,20 +1,23 @@
 # Changelog
 
-Este proyecto sigue el criterio de versionado semántico: `MAYOR.MENOR.PARCHE`.
+Este proyecto sigue versionado semántico: `MAYOR.MENOR.PARCHE`.
 
-## [0.1.0] — Foundation
+## [0.2.0] — Modelo de datos inicial
 
 ### Agregado
 
-- Estructura inicial profesional para abrir con Visual Studio Code.
-- Configuración segura de Git y plantilla de variables de entorno.
-- Dominio de negocio: hipótesis, activo, experimento, validación, aprendizaje y escalado.
-- Ciclo de vida del activo y reglas de negocio fundacionales.
-- Arquitectura conceptual y roadmap inicial.
+- Inventario de las 16 exportaciones reales recibidas de Mercado Libre.
+- Reglas de importación y deduplicación para archivos superpuestos.
+- Diccionario de datos inicial y mapeo de fuentes hacia el dominio Lumina.
+- Modelo físico inicial y esquema SQL compatible con Supabase/PostgreSQL.
+- Política de minimización de datos personales de compradores.
 
-### Fuera de alcance
+### Pendiente
 
-- Conexión con API de Mercado Libre.
-- Base de datos creada en Supabase.
-- Automatizaciones n8n.
-- Carga de datos reales, dashboards y reportes automáticos.
+- Validar el esquema con una importación histórica controlada.
+- Configurar Supabase y ejecutar la migración SQL.
+- Definir umbrales por categoría para la validación de activos.
+
+## [0.1.0] — Foundation
+
+- Estructura inicial del proyecto, dominio del negocio, arquitectura conceptual y roadmap.
