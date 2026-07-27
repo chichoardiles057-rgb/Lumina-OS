@@ -1,0 +1,27 @@
+# Secrets
+.env
+.env.*
+!.env.example
+*.pem
+*.key
+
+# Data and generated output
+data/raw/*
+!data/raw/.gitkeep
+data/processed/*
+!data/processed/.gitkeep
+data/archive/*
+!data/archive/.gitkeep
+logs/*
+!logs/.gitkeep
+reports/generated/*
+!reports/generated/.gitkeep
+
+# Editors and OS
+.DS_Store
+.vscode/*
+!.vscode/extensions.json
+node_modules/
+__pycache__/
+*.py[cod]
+.pytest_cache/
